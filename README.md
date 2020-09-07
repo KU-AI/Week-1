@@ -6,9 +6,11 @@ git config --global user.name "John Doe"
 
 git config --global user.email johndoe@example.com
 
-## Add Remote Url
+## Initialize Git
 
 본인이 작성한 루트 디렉토리로 이동
+
+git init
 
 git remote add origin https://github.com/KU-AI/Week-1.git
 
