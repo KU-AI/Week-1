@@ -7,5 +7,4 @@ type
 '''
 ```bash
 bash search.sh
-}
 ```
