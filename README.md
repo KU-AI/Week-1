@@ -4,4 +4,6 @@ VGG and ResNet
 ## Added Web scrapper
 Scrapping image from bing
 type
+'''
 bash search.sh
+'''
