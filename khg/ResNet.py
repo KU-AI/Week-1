@@ -9,17 +9,18 @@ import torch
 ####################
 
 class ResNet(nn.Module):
-    def __init__(self, hidden_layers , inplanes, planes, num_classes=1000, init_weights=True):
+    def __init__(self, hidden_layers, inplanes, planes, num_classes=10, init_weights=True):
         super(ResNet, self).__init__()
         self.input_layers = nn.Sequential(
             nn.Conv2d(inplanes, planes, kernel_size=7, padding=1, stride=2, bias=False),
             nn.MaxPool2d(kernel_size=3, stride=2),
         )
+        self.relu1=nn.ReLU()
         self.relu=nn.ReLU(inplace=True)
         self.hidden_layers, self.output_channels=hidden_layers
         self.avgpool=nn.AdaptiveAvgPool2d((1,1))
         self.output_layers = nn.Sequential(
-            nn.Linear(self.output_channels, num_classes)
+            nn.Linear(self.output_channels, num_classes),
         )
         if init_weights:
             self._initialize_weights()
@@ -30,7 +31,7 @@ class ResNet(nn.Module):
             x = i(x)
             identity = i(identity)
         x += identity
-        identity = self.relu(identity)
+        identity = self.relu1(identity)
         x = self.relu(x)
 
         for i in self.hidden_layers:
@@ -38,8 +39,7 @@ class ResNet(nn.Module):
             x = i(x)
             x += identity
             x = self.relu(x)
-            identity = self.relu(identity)
-
+            identity = self.relu1(identity)
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
         x = self.output_layers(x)
@@ -59,23 +59,22 @@ class ResNet(nn.Module):
                 nn.init.constant_(m.bias, 0)
 
 def make_layers(n_layers, input_channels, output_channels):
+        n_layers=n_layers*2
         layers=[]
-        res=[]
-        layers += [nn.Conv2d(input_channels, output_channels, kernel_size=3, padding=1, stride=1)]
+        layers += [nn.Conv2d(input_channels, output_channels, kernel_size=3, padding=1, stride=2)]
         input_channels=output_channels
         conv2d = nn.Conv2d(input_channels, output_channels, kernel_size=3, padding=1, stride=1)
         for i in range(n_layers-1):
-            layers += [conv2d, conv2d]
-        res=layers
+            layers += [conv2d]
         output_channels=output_channels*2
-        return layers, res, input_channels, output_channels
+        return layers, input_channels, output_channels
 
 def make_hidden(structure):
     input_channels=64
     output_channels=64
     layers=[]
     for i, set in enumerate(structure):
-        r_layers, res, input_channels, output_channels = make_layers(set, input_channels, output_channels)
+        r_layers, input_channels, output_channels = make_layers(set, input_channels, output_channels)
         layers += r_layers
         if i == len(structure)-1:
             output_channels=int(output_channels/2)
@@ -93,7 +92,7 @@ print(resnet)
 
 
 epoch=50
-batch_size=50
+batch_size=32
 ### dataset load ###
 transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 trainset = torchvision.datasets.CIFAR10(root='./data', train=True,download=True, transform=transform)
@@ -103,7 +102,7 @@ testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size,shuffle=
 classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(resnet.parameters(), lr=0.001)
+optimizer = optim.Adam(resnet.parameters(), lr=0.001, 9)
 for epoch in tqdm(range(epoch)):
     running_loss = 0.0
     for i, data in enumerate(trainloader, 0):
